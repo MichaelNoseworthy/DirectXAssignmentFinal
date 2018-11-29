@@ -180,6 +180,7 @@ bool CameraAndDynamicIndexingApp::Initialize()
 	BuildDescriptorHeaps();
     BuildShadersAndInputLayout();
     BuildShapeGeometry();
+	BuildSkullGeometry();
 	BuildMaterials();
     BuildRenderItems();
     BuildFrameResources();
@@ -1222,7 +1223,7 @@ void CameraAndDynamicIndexingApp::BuildRenderItems()
 	gridRitem->BaseVertexLocation = gridRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
 	mAllRitems.push_back(std::move(gridRitem));
 	////////////////////////////////////////////
-
+	/*
 	//Skull issue.  Had to add the below item to replace it's ObjCBIndex position
 	auto gridRitem2 = std::make_unique<RenderItem>();
 	gridRitem2->World = MathHelper::Identity4x4();
@@ -1235,9 +1236,10 @@ void CameraAndDynamicIndexingApp::BuildRenderItems()
 	gridRitem2->StartIndexLocation = gridRitem2->Geo->DrawArgs["grid"].StartIndexLocation;
 	gridRitem2->BaseVertexLocation = gridRitem2->Geo->DrawArgs["grid"].BaseVertexLocation;
 	mAllRitems.push_back(std::move(gridRitem2));
-	/*
+	*/
 	auto skullRitem = std::make_unique<RenderItem>();
 	XMStoreFloat4x4(&skullRitem->World, XMMatrixScaling(0.5f, 0.5f, 0.5f)*XMMatrixTranslation(0.0f, 14.0f, 0.0f));
+	XMStoreFloat4x4(&skullRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	skullRitem->TexTransform = MathHelper::Identity4x4();
 	skullRitem->ObjCBIndex = 2;
 	skullRitem->Mat = mMaterials["skullMat"].get();
@@ -1247,7 +1249,7 @@ void CameraAndDynamicIndexingApp::BuildRenderItems()
 	skullRitem->StartIndexLocation = skullRitem->Geo->DrawArgs["skull"].StartIndexLocation;
 	skullRitem->BaseVertexLocation = skullRitem->Geo->DrawArgs["skull"].BaseVertexLocation;
 	mAllRitems.push_back(std::move(skullRitem));
-	*/
+	
 	//XMMATRIX brickTexTransform = XMMatrixScaling(1.0f, 1.0f, 1.0f);
 	
 	auto diamondRitem = std::make_unique<RenderItem>();
