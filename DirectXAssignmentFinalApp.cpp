@@ -1048,7 +1048,7 @@ void CameraAndDynamicIndexingApp::BuildMaterials()
 	eye0->Name = "eye0";
 	eye0->MatCBIndex = 5;
 	eye0->DiffuseSrvHeapIndex = 5;
-	eye0->DiffuseAlbedo = XMFLOAT4(Colors::Blue);
+	eye0->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);//XMFLOAT4(Colors::Blue);
 	eye0->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
 	eye0->Roughness = 0.3f;
 
@@ -1056,7 +1056,7 @@ void CameraAndDynamicIndexingApp::BuildMaterials()
 	eye1->Name = "eye1";
 	eye1->MatCBIndex = 6;
 	eye1->DiffuseSrvHeapIndex = 6;
-	eye1->DiffuseAlbedo = XMFLOAT4(Colors::Black);
+	eye1->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);// XMFLOAT4(Colors::Black);
 	eye1->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
 	eye1->Roughness = 0.3f;
 
@@ -1064,7 +1064,7 @@ void CameraAndDynamicIndexingApp::BuildMaterials()
 	sun->Name = "sun";
 	sun->MatCBIndex = 7;
 	sun->DiffuseSrvHeapIndex = 7;
-	sun->DiffuseAlbedo = XMFLOAT4(Colors::Yellow);
+	sun->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);// XMFLOAT4(Colors::Yellow);
 	sun->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
 	sun->Roughness = 0.3f;
 
@@ -1072,7 +1072,7 @@ void CameraAndDynamicIndexingApp::BuildMaterials()
 	red->Name = "red";
 	red->MatCBIndex = 8;
 	red->DiffuseSrvHeapIndex = 8;
-	red->DiffuseAlbedo = XMFLOAT4(Colors::Red);
+	red->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);// XMFLOAT4(Colors::Red);
 	red->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
 	red->Roughness = 0.3f;
 
@@ -1080,7 +1080,7 @@ void CameraAndDynamicIndexingApp::BuildMaterials()
 	hex->Name = "hex";
 	hex->MatCBIndex = 9;
 	hex->DiffuseSrvHeapIndex = 9;
-	hex->DiffuseAlbedo = XMFLOAT4(Colors::Orange);
+	hex->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);// XMFLOAT4(Colors::Orange);
 	hex->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
 	hex->Roughness = 0.3f;
 
@@ -1088,7 +1088,7 @@ void CameraAndDynamicIndexingApp::BuildMaterials()
 	trianglepurple->Name = "trianglepurple";
 	trianglepurple->MatCBIndex = 10;
 	trianglepurple->DiffuseSrvHeapIndex = 10;
-	trianglepurple->DiffuseAlbedo = XMFLOAT4(Colors::Purple);
+	trianglepurple->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);// XMFLOAT4(Colors::Purple);
 	trianglepurple->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
 	trianglepurple->Roughness = 0.3f;
 	
