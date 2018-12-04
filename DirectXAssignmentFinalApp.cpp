@@ -253,7 +253,7 @@ void CameraAndDynamicIndexingApp::Update(const GameTimer& gt)
 	UpdateObjectCBs(gt);
 	UpdateMaterialBuffer(gt);
 	UpdateMainPassCB(gt);
-	UpdateWaves(gt);
+	//UpdateWaves(gt);
 }
 
 void CameraAndDynamicIndexingApp::Draw(const GameTimer& gt)
@@ -295,12 +295,22 @@ void CameraAndDynamicIndexingApp::Draw(const GameTimer& gt)
 	auto matBuffer = mCurrFrameResource->MaterialBuffer->Resource();
 	mCommandList->SetGraphicsRootShaderResourceView(2, matBuffer->GetGPUVirtualAddress());
 
+
+	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Opaque]);
+	
+	mCommandList->SetPipelineState(mPSOs["alphaTested"].Get());
+	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::AlphaTested]);
+	/*
+	mCommandList->SetPipelineState(mPSOs["transparent"].Get());
+	DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Transparent]);
+	*/
 	// Bind all the textures used in this scene.  Observe
     // that we only have to specify the first descriptor in the table.  
     // The root signature knows how many descriptors are expected in the table.
 	mCommandList->SetGraphicsRootDescriptorTable(3, mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 
     DrawRenderItems(mCommandList.Get(), mOpaqueRitems);
+
 
     // Indicate a state transition on the resource usage.
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
@@ -684,14 +694,14 @@ void CameraAndDynamicIndexingApp::LoadTextures()
 	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
 		mCommandList.Get(), crateTex->Filename.c_str(),
 		crateTex->Resource, crateTex->UploadHeap));
-
+	
 	auto grassTex = std::make_unique<Texture>();
 	grassTex->Name = "grassTex";
 	grassTex->Filename = L"Textures/grass.dds";
 	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
 		mCommandList.Get(), grassTex->Filename.c_str(),
 		grassTex->Resource, grassTex->UploadHeap));
-
+		
 	auto waterTex = std::make_unique<Texture>();
 	waterTex->Name = "waterTex";
 	waterTex->Filename = L"Textures/water1.dds";
@@ -754,7 +764,7 @@ void CameraAndDynamicIndexingApp::BuildDescriptorHeaps()
 	// Create the SRV heap.
 	//
 	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-	srvHeapDesc.NumDescriptors = 4;
+	srvHeapDesc.NumDescriptors = 6;
 	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mSrvDescriptorHeap)));
@@ -764,12 +774,13 @@ void CameraAndDynamicIndexingApp::BuildDescriptorHeaps()
 	//
 	CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(mSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
-	auto grassTex = mTextures["grassTex"]->Resource;
-	auto waterTex = mTextures["waterTex"]->Resource;
 	auto bricksTex = mTextures["bricksTex"]->Resource;
 	auto stoneTex = mTextures["stoneTex"]->Resource;
 	auto tileTex = mTextures["tileTex"]->Resource;
 	auto crateTex = mTextures["crateTex"]->Resource;
+	auto waterTex = mTextures["waterTex"]->Resource;
+	auto grassTex = mTextures["grassTex"]->Resource;
+
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -801,18 +812,36 @@ void CameraAndDynamicIndexingApp::BuildDescriptorHeaps()
 	srvDesc.Format = crateTex->GetDesc().Format;
 	srvDesc.Texture2D.MipLevels = crateTex->GetDesc().MipLevels;
 	md3dDevice->CreateShaderResourceView(crateTex.Get(), &srvDesc, hDescriptor);
+	
+	// next descriptor
+	hDescriptor.Offset(1, mCbvSrvDescriptorSize);
+
+	srvDesc.Format = waterTex->GetDesc().Format;
+	srvDesc.Texture2D.MipLevels = waterTex->GetDesc().MipLevels;
+	md3dDevice->CreateShaderResourceView(waterTex.Get(), &srvDesc, hDescriptor);
+	
+	// next descriptor
+	hDescriptor.Offset(1, mCbvSrvDescriptorSize);
+
+	srvDesc.Format = grassTex->GetDesc().Format;
+	srvDesc.Texture2D.MipLevels = grassTex->GetDesc().MipLevels;
+	md3dDevice->CreateShaderResourceView(grassTex.Get(), &srvDesc, hDescriptor);
+
+	
 }
 
 void CameraAndDynamicIndexingApp::BuildShadersAndInputLayout()
 {
+	
 	const D3D_SHADER_MACRO alphaTestDefines[] =
 	{
 		"ALPHA_TEST", "1",
 		NULL, NULL
 	};
-
+	
 	mShaders["standardVS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", nullptr, "VS", "vs_5_1");
 	mShaders["opaquePS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", nullptr, "PS", "ps_5_1");
+	mShaders["alphaTestedPS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", alphaTestDefines, "PS", "ps_5_1");
 	
     mInputLayout =
     {
@@ -1178,6 +1207,42 @@ void CameraAndDynamicIndexingApp::BuildPSOs()
 	opaquePsoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
 	opaquePsoDesc.DSVFormat = mDepthStencilFormat;
     ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&opaquePsoDesc, IID_PPV_ARGS(&mPSOs["opaque"])));
+
+	//
+	// PSO for transparent objects
+	//
+	
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC transparentPsoDesc = opaquePsoDesc;
+
+	D3D12_RENDER_TARGET_BLEND_DESC transparencyBlendDesc;
+	transparencyBlendDesc.BlendEnable = true;
+	transparencyBlendDesc.LogicOpEnable = false;
+	transparencyBlendDesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	transparencyBlendDesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+	transparencyBlendDesc.BlendOp = D3D12_BLEND_OP_ADD;
+	transparencyBlendDesc.SrcBlendAlpha = D3D12_BLEND_ONE;
+	transparencyBlendDesc.DestBlendAlpha = D3D12_BLEND_ZERO;
+	transparencyBlendDesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	transparencyBlendDesc.LogicOp = D3D12_LOGIC_OP_NOOP;
+	transparencyBlendDesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+
+	transparentPsoDesc.BlendState.RenderTarget[0] = transparencyBlendDesc;
+	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&transparentPsoDesc, IID_PPV_ARGS(&mPSOs["transparent"])));
+	
+	//
+	// PSO for alpha tested objects
+	//
+	
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC alphaTestedPsoDesc = opaquePsoDesc;
+	alphaTestedPsoDesc.PS =
+	{
+		reinterpret_cast<BYTE*>(mShaders["alphaTestedPS"]->GetBufferPointer()),
+		mShaders["alphaTestedPS"]->GetBufferSize()
+	};
+	alphaTestedPsoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&alphaTestedPsoDesc, IID_PPV_ARGS(&mPSOs["alphaTested"])));
+
+	
 }
 
 void CameraAndDynamicIndexingApp::BuildFrameResources()
@@ -1185,7 +1250,7 @@ void CameraAndDynamicIndexingApp::BuildFrameResources()
     for(int i = 0; i < gNumFrameResources; ++i)
     {
         mFrameResources.push_back(std::make_unique<FrameResource>(md3dDevice.Get(),
-            1, (UINT)mAllRitems.size(), (UINT)mMaterials.size()));
+            1, (UINT)mAllRitems.size(), (UINT)mMaterials.size(), mWaves->VertexCount()));
     }
 }
 
@@ -1287,6 +1352,7 @@ void CameraAndDynamicIndexingApp::BuildMaterials()
 	water->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
 	water->Roughness = 0.0f;
 
+	
 	auto grass = std::make_unique<Material>();
 	grass->Name = "grass";
 	grass->MatCBIndex = 12;
@@ -1305,10 +1371,10 @@ void CameraAndDynamicIndexingApp::BuildMaterials()
 	mMaterials["sun"] = std::move(sun);
 	mMaterials["red"] = std::move(red);
 	mMaterials["hex"] = std::move(hex);
-	mMaterials["grass"] = std::move(grass);
-	
 	mMaterials["trianglepurple"] = std::move(trianglepurple);
+
 	mMaterials["water"] = std::move(water);
+	mMaterials["grass"] = std::move(grass);
 }
 
 void CameraAndDynamicIndexingApp::BuildRenderItems()
@@ -1416,6 +1482,18 @@ void CameraAndDynamicIndexingApp::BuildRenderItems()
 	basePillar->StartIndexLocation = basePillar->Geo->DrawArgs["cylinder"].StartIndexLocation;
 	basePillar->BaseVertexLocation = basePillar->Geo->DrawArgs["cylinder"].BaseVertexLocation;
 	mAllRitems.push_back(std::move(basePillar));
+
+	auto basePillar2 = std::make_unique<RenderItem>();
+	XMStoreFloat4x4(&basePillar2->World, XMMatrixScaling(4.0f, 6.0f, 4.0f)/* * XMMatrixRotationX(5.1) */* XMMatrixTranslation(0.0f, 5.0f, 0.0f));
+	XMStoreFloat4x4(&basePillar2->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
+	basePillar2->ObjCBIndex = 1;
+	basePillar2->Mat = mMaterials["bricks0"].get();
+	basePillar2->Geo = mGeometries["shapeGeo"].get();
+	basePillar2->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	basePillar2->IndexCount = basePillar2->Geo->DrawArgs["cylinder"].IndexCount;
+	basePillar2->StartIndexLocation = basePillar2->Geo->DrawArgs["cylinder"].StartIndexLocation;
+	basePillar2->BaseVertexLocation = basePillar2->Geo->DrawArgs["cylinder"].BaseVertexLocation;
+	mAllRitems.push_back(std::move(basePillar2));
 	
 	/*auto gridRitem = std::make_unique<RenderItem>();
 	gridRitem->World = MathHelper::Identity4x4();
@@ -1790,12 +1868,12 @@ void CameraAndDynamicIndexingApp::BuildRenderItems()
 	prismRitem->StartIndexLocation = prismRitem->Geo->DrawArgs["prism"].StartIndexLocation;
 	prismRitem->BaseVertexLocation = prismRitem->Geo->DrawArgs["prism"].BaseVertexLocation;
 	mAllRitems.push_back(std::move(prismRitem));
-
+	
 	auto wavesRitem = std::make_unique<RenderItem>();
 	wavesRitem->World = MathHelper::Identity4x4();
 	XMStoreFloat4x4(&wavesRitem->TexTransform, XMMatrixScaling(5.0f, 5.0f, 1.0f));
 	wavesRitem->ObjCBIndex = 30;
-	wavesRitem->Mat = mMaterials["water"].get();
+	wavesRitem->Mat = mMaterials["red"].get();
 	wavesRitem->Geo = mGeometries["waterGeo"].get();
 	wavesRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	wavesRitem->IndexCount = wavesRitem->Geo->DrawArgs["grid"].IndexCount;
@@ -1805,11 +1883,11 @@ void CameraAndDynamicIndexingApp::BuildRenderItems()
 	mWavesRitem = wavesRitem.get();
 
 	mRitemLayer[(int)RenderLayer::Transparent].push_back(wavesRitem.get());
-
+	/*
 	auto gridRitem = std::make_unique<RenderItem>();
 	gridRitem->World = MathHelper::Identity4x4();
 	XMStoreFloat4x4(&gridRitem->TexTransform, XMMatrixScaling(5.0f, 5.0f, 1.0f));
-	gridRitem->ObjCBIndex = 1;
+	gridRitem->ObjCBIndex = 31;
 	gridRitem->Mat = mMaterials["grass"].get();
 	gridRitem->Geo = mGeometries["landGeo"].get();
 	gridRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
@@ -1818,7 +1896,7 @@ void CameraAndDynamicIndexingApp::BuildRenderItems()
 	gridRitem->BaseVertexLocation = gridRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
 
 	mRitemLayer[(int)RenderLayer::Opaque].push_back(gridRitem.get());
-
+	*/
 	for(auto& e : mAllRitems)
 		mOpaqueRitems.push_back(e.get());
 }
@@ -1906,6 +1984,7 @@ std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> CameraAndDynamicIndexingApp::Ge
 		anisotropicWrap, anisotropicClamp };
 }
 
+
 float CameraAndDynamicIndexingApp::GetHillsHeight(float x, float z)const
 {
 	return 0.3f*(z*sinf(0.1f*x) + x * cosf(0.1f*z));
@@ -1924,4 +2003,5 @@ XMFLOAT3 CameraAndDynamicIndexingApp::GetHillsNormal(float x, float z)const
 
 	return n;
 }
+
 
