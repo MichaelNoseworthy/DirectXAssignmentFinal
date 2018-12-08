@@ -286,7 +286,7 @@ void DirectXAssignmentFinalApp::Draw(const GameTimer& gt)
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
 		D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
-	DirectX::XMFLOAT4 clearColor = { 0.07f, 0.05f, 0.1f, 1.0f };
+	DirectX::XMFLOAT4 clearColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 
     // Clear the back buffer and depth buffer.
     mCommandList->ClearRenderTargetView(CurrentBackBufferView(), (float*)&clearColor, 0, nullptr);
@@ -536,31 +536,38 @@ void DirectXAssignmentFinalApp::UpdateMainPassCB(const GameTimer& gt)
 	mMainPassCB.FarZ = 1000.0f;
 	mMainPassCB.TotalTime = gt.TotalTime();
 	mMainPassCB.DeltaTime = gt.DeltaTime();
-	mMainPassCB.AmbientLight = { 0.25f, 0.25f, 0.35f, 1.0f };
+
+	mMainPassCB.AmbientLight = { 0.15f, 0.15f, 0.35f, 1.0f };
+
+	mMainPassCB.Lights[0].Position = { 0.0f, 29.5f, -2.0f };
 	mMainPassCB.Lights[0].Direction = { 0.57735f, -0.57735f, 0.57735f };
-	mMainPassCB.Lights[0].Strength = { 0.6f, 0.6f, 0.6f };
+	mMainPassCB.Lights[0].Strength = { 0.6f, 0.6f, 0.6f };	
+
 
 	//Directional Light
-	mMainPassCB.Lights[1].Direction = { -0.57735f, -0.57735f, 0.57735f };
+	mMainPassCB.Lights[1].Position = { 0.0f, 29.5f, -2.0f };
+	mMainPassCB.Lights[1].Direction = { -0.6f, -0.6f, 0.6f };
 	mMainPassCB.Lights[1].Strength = { 0.3f, 0.3f, 0.3f };
+	
+	/*//Directional Light
+	mMainPassCB.Lights[2].Position = { 0.0f, 29.5f, -2.0f };
+	mMainPassCB.Lights[2].Direction = { 0.0f, -30.7f, -0.7f };
+	mMainPassCB.Lights[2].Strength = { 0.2f, 0.2f, 0.2f };*/
 
-
-	//Directional Light
-	mMainPassCB.Lights[2].Direction = { 0.0f, -0.707f, -0.707f };
-	mMainPassCB.Lights[2].Strength = { 0.15f, 0.15f, 0.15f };
-
-
-	//Point light 
+	
+	//Point light //blue
 	mMainPassCB.Lights[3].Position = { 0.0f, 29.5f, -2.0f };
 	mMainPassCB.Lights[3].FalloffStart = 0.0f;
-	mMainPassCB.Lights[3].Strength = { 0.0f, 0.0f, 4.0f };
+	mMainPassCB.Lights[3].Strength = { 1.0f, 0.0f, 0.0f };
 	mMainPassCB.Lights[3].FalloffEnd = 10.f;
 
-	//Point light 
-	mMainPassCB.Lights[4].Position = { 13.0f, 24.5f, -17.5f };
+	//Point light sun (-20.7f, 50.0f, 35.0f));
+	mMainPassCB.Lights[4].Position = { -20.7f, 50.0f, 30.0 };	
 	mMainPassCB.Lights[4].FalloffStart = 0.0f;
-	mMainPassCB.Lights[4].Strength = { 0.93f*2.f, 0.99f*2.f, 0.259f*2.f };
+	mMainPassCB.Lights[4].Strength = { 0.93f, 0.7f, 0.f };
 	mMainPassCB.Lights[4].FalloffEnd = 10.f;
+	mMainPassCB.Lights[4].Direction = { -13.0f, 24.5f, -17.0f };
+	mMainPassCB.Lights[4].SpotPower = 0.8f;
 
 
 
@@ -633,7 +640,7 @@ void DirectXAssignmentFinalApp::LoadTextures()
 
 	auto bricksTex = std::make_unique<Texture>();
 	bricksTex->Name = "bricksTex";
-	bricksTex->Filename = L"Textures/bricks2.dds";
+	bricksTex->Filename = L"Textures/bricks3.dds";
 	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
 		mCommandList.Get(), bricksTex->Filename.c_str(),
 		bricksTex->Resource, bricksTex->UploadHeap));
@@ -654,14 +661,14 @@ void DirectXAssignmentFinalApp::LoadTextures()
 
 	auto checkerTex = std::make_unique<Texture>();
 	checkerTex->Name = "checkerTex";
-	checkerTex->Filename = L"Textures/checkboard.dds";
+	checkerTex->Filename = L"Textures/pyramid.dds";
 	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
 		mCommandList.Get(), checkerTex->Filename.c_str(),
 		checkerTex->Resource, checkerTex->UploadHeap));
 
-	auto sandBrickTex = std::make_unique<Texture>();
+	auto sandBrickTex = std::make_unique<Texture>();//777
 	sandBrickTex->Name = "sandBrickTex";
-	sandBrickTex->Filename = L"Textures/sandbrick.dds";
+	sandBrickTex->Filename = L"Textures/sun.dds";
 	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
 		mCommandList.Get(), sandBrickTex->Filename.c_str(),
 		sandBrickTex->Resource, sandBrickTex->UploadHeap));
@@ -870,7 +877,7 @@ void DirectXAssignmentFinalApp::BuildShadersAndInputLayouts()
 void DirectXAssignmentFinalApp::BuildLandGeometry()
 {
     GeometryGenerator geoGen;
-    GeometryGenerator::MeshData grid = geoGen.CreateGrid(1600.0f, 1600.0f, 50, 50);
+    GeometryGenerator::MeshData grid = geoGen.CreateGrid(600.0f, 600.0f, 50, 50);
 
     //
     // Extract the vertex elements we are interested and apply the height function to
@@ -1427,8 +1434,8 @@ void DirectXAssignmentFinalApp::BuildTreeSpritesGeometry()
 	float z = 25.0f;
 	for(UINT i = 0; i < treeCount; ++i)
 	{
-		/*float x = MathHelper::RandF(MathHelper::RandF(-60.f, -25.0), MathHelper::RandF(25.f, 65.0));
-		float z = MathHelper::RandF(MathHelper::RandF(-60.f, -25.0), MathHelper::RandF(25.f, 65.0));*/
+		float x = MathHelper::RandF(MathHelper::RandF(-80.f, -35.0), MathHelper::RandF(25.f, 65.0));
+		float z = MathHelper::RandF(MathHelper::RandF(-80.f, -35.0), MathHelper::RandF(25.f, 65.0));
 
 		float y = GetHillsHeight(x, z);
 
@@ -1436,9 +1443,9 @@ void DirectXAssignmentFinalApp::BuildTreeSpritesGeometry()
 		y += 4.0f;
 
 		vertices[i].Pos = XMFLOAT3(x, y, z);
-		vertices[i].Size = XMFLOAT2(10.0f, 10.0f);
+		vertices[i].Size = XMFLOAT2(20.0f, 20.0f);
 		vertices[i+1].Pos = XMFLOAT3(x, y, -z);
-		vertices[i+1].Size = XMFLOAT2(10.0f, 10.0f);
+		vertices[i+1].Size = XMFLOAT2(20.0f, 20.0f);
 		i ++;
 		x -= 5.0f;
 	}
@@ -1657,7 +1664,7 @@ void DirectXAssignmentFinalApp::BuildMaterials()
 	ice->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
 	ice->Roughness = 0.25f;
 
-	auto stone = std::make_unique<Material>();
+	auto stone = std::make_unique<Material>();//9999
 	stone->Name = "stone";
 	stone->MatCBIndex = 6;
 	stone->DiffuseSrvHeapIndex = 5;
@@ -1807,7 +1814,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	XMStoreFloat4x4(&diamondRitem->World, XMMatrixScaling(5.0f, 5.0f, 5.0f) * XMMatrixRotationX(5.1) * XMMatrixTranslation(-0.7f, yLevel + 15.9f, -0.6f));
 	XMStoreFloat4x4(&diamondRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	diamondRitem->ObjCBIndex = 6;
-	diamondRitem->Mat = mMaterials["stone"].get();
+	diamondRitem->Mat = mMaterials["mossy"].get();
 	diamondRitem->Geo = mGeometries["shapeGeo"].get();
 	diamondRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	diamondRitem->IndexCount = diamondRitem->Geo->DrawArgs["diamond"].IndexCount;
@@ -1820,7 +1827,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	XMStoreFloat4x4(&diamond1Ritem->World, XMMatrixScaling(5.0f, 5.0f, 5.0f) * XMMatrixRotationX(5.1) * XMMatrixTranslation(0.7f, yLevel + 15.9f, -0.6f));
 	XMStoreFloat4x4(&diamond1Ritem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	diamond1Ritem->ObjCBIndex = 7;
-	diamond1Ritem->Mat = mMaterials["stone"].get();
+	diamond1Ritem->Mat = mMaterials["mossy"].get();
 	diamond1Ritem->Geo = mGeometries["shapeGeo"].get();
 	diamond1Ritem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	diamond1Ritem->IndexCount = diamond1Ritem->Geo->DrawArgs["diamond"].IndexCount;
@@ -1833,7 +1840,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(4.0f, 4.0f, 4.0f)* XMMatrixTranslation(15.0f, yLevel + 18.0f, -15.0f));
 	XMStoreFloat4x4(&pyramidRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	pyramidRitem->ObjCBIndex = 8;
-	pyramidRitem->Mat = mMaterials["stone"].get();
+	pyramidRitem->Mat = mMaterials["bricks"].get();
 	pyramidRitem->Geo = mGeometries["shapeGeo"].get();
 	pyramidRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	pyramidRitem->IndexCount = pyramidRitem->Geo->DrawArgs["pyramid"].IndexCount;
@@ -1846,7 +1853,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	XMStoreFloat4x4(&rhomboRitem->World, XMMatrixScaling(1.0f, 1.0f, 1.0f)* XMMatrixTranslation(6.7f, yLevel + 8.0f, -17.0f));
 	XMStoreFloat4x4(&rhomboRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	rhomboRitem->ObjCBIndex = 9;
-	rhomboRitem->Mat = mMaterials["stone"].get();
+	rhomboRitem->Mat = mMaterials["checkboard"].get();
 	rhomboRitem->Geo = mGeometries["shapeGeo"].get();
 	rhomboRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	rhomboRitem->IndexCount = rhomboRitem->Geo->DrawArgs["rhombo"].IndexCount;
@@ -1859,7 +1866,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	XMStoreFloat4x4(&sphereRitem->World, XMMatrixScaling(3.0f, 3.0f, 3.0f) * XMMatrixTranslation(-20.7f, yLevel + 40.0f, 35.0f));
 	XMStoreFloat4x4(&sphereRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	sphereRitem->ObjCBIndex = 10;
-	sphereRitem->Mat = mMaterials["stone"].get();
+	sphereRitem->Mat = mMaterials["sandBrick"].get();//sol
 	sphereRitem->Geo = mGeometries["shapeGeo"].get();
 	sphereRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	sphereRitem->IndexCount = sphereRitem->Geo->DrawArgs["sphere"].IndexCount;
@@ -1869,7 +1876,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	mAllRitems.push_back(std::move(sphereRitem));
 
 	auto hexagonRitem = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&hexagonRitem->World, XMMatrixScaling(3.0f, 0.1f, 3.0f)* XMMatrixTranslation(0.0f, yLevel + 0.2f, 0.0f));
+	XMStoreFloat4x4(&hexagonRitem->World, XMMatrixScaling(3.0f, 0.1f, 3.0f)* XMMatrixTranslation(0.0f, yLevel, -5.0f));
 	XMStoreFloat4x4(&hexagonRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	hexagonRitem->ObjCBIndex = 11;
 	hexagonRitem->Mat = mMaterials["stone"].get();
@@ -1885,7 +1892,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	XMStoreFloat4x4(&triangleEqRitem->World, XMMatrixScaling(2.0f, 2.0f, 15.0f)* XMMatrixTranslation(-15.0f, yLevel + 16.0f, -0.0f));
 	XMStoreFloat4x4(&triangleEqRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	triangleEqRitem->ObjCBIndex = 12;
-	triangleEqRitem->Mat = mMaterials["stone"].get();
+	triangleEqRitem->Mat = mMaterials["bricks"].get();
 	triangleEqRitem->Geo = mGeometries["shapeGeo"].get();
 	triangleEqRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	triangleEqRitem->IndexCount = triangleEqRitem->Geo->DrawArgs["triangleEq"].IndexCount;
@@ -1898,7 +1905,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	XMStoreFloat4x4(&triangleRectSqrRitem->World, XMMatrixScaling(2.5f, 2.5f, 2.5f)* XMMatrixTranslation(12.0f, yLevel + 13.5f, -15.0f));
 	XMStoreFloat4x4(&triangleRectSqrRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	triangleRectSqrRitem->ObjCBIndex = 13; 
-	triangleRectSqrRitem->Mat = mMaterials["stone"].get();
+	triangleRectSqrRitem->Mat = mMaterials["bricks"].get();
 	triangleRectSqrRitem->Geo = mGeometries["shapeGeo"].get();
 	triangleRectSqrRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	triangleRectSqrRitem->IndexCount = triangleRectSqrRitem->Geo->DrawArgs["triangleRectSqr"].IndexCount;
@@ -2028,7 +2035,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 
 
 	auto frontCastleWallUp = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&frontCastleWallUp->World, XMMatrixScaling(22.0f, 8.0f, 2.0f)*XMMatrixTranslation(0.0f, yLevel + 9.0f, -15.0f));
+	XMStoreFloat4x4(&frontCastleWallUp->World, XMMatrixScaling(22.0f, 8.0f, 1.5f)*XMMatrixTranslation(0.0f, yLevel + 9.0f, -15.0f));
 	XMStoreFloat4x4(&frontCastleWallUp->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	frontCastleWallUp->ObjCBIndex = 23;
 	frontCastleWallUp->Mat = mMaterials["stone"].get();
@@ -2044,7 +2051,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	XMStoreFloat4x4(&triangleRectSqrBack->World, XMMatrixScaling(2.5f, 2.5f, 2.5f)* XMMatrixTranslation(12.0f, yLevel + 13.5f, 15.0f));
 	XMStoreFloat4x4(&triangleRectSqrBack->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	triangleRectSqrBack->ObjCBIndex = 24;
-	triangleRectSqrBack->Mat = mMaterials["stone"].get();
+	triangleRectSqrBack->Mat = mMaterials["bricks"].get();
 	triangleRectSqrBack->Geo = mGeometries["shapeGeo"].get();
 	triangleRectSqrBack->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	triangleRectSqrBack->IndexCount = triangleRectSqrBack->Geo->DrawArgs["triangleRectSqr"].IndexCount;
@@ -2057,7 +2064,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	XMStoreFloat4x4(&triangleRectSqrBackLeft->World, XMMatrixScaling(2.5f, 2.5f, 2.5f) * XMMatrixRotationY(3.12) * XMMatrixTranslation(-12.0f, yLevel + 13.5f, 15.0f));
 	XMStoreFloat4x4(&triangleRectSqrBackLeft->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	triangleRectSqrBackLeft->ObjCBIndex = 25;
-	triangleRectSqrBackLeft->Mat = mMaterials["stone"].get();
+	triangleRectSqrBackLeft->Mat = mMaterials["bricks"].get();
 	triangleRectSqrBackLeft->Geo = mGeometries["shapeGeo"].get();
 	triangleRectSqrBackLeft->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	triangleRectSqrBackLeft->IndexCount = triangleRectSqrBackLeft->Geo->DrawArgs["triangleRectSqr"].IndexCount;
@@ -2070,7 +2077,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	XMStoreFloat4x4(&triangleRectSqrFrontLeft->World, XMMatrixScaling(2.5f, 2.5f, 2.5f) * XMMatrixRotationY(3.12)* XMMatrixTranslation(-12.0f, yLevel + 13.5f, -15.0f));
 	XMStoreFloat4x4(&triangleRectSqrFrontLeft->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	triangleRectSqrFrontLeft->ObjCBIndex = 26;
-	triangleRectSqrFrontLeft->Mat = mMaterials["stone"].get();
+	triangleRectSqrFrontLeft->Mat = mMaterials["bricks"].get();
 	triangleRectSqrFrontLeft->Geo = mGeometries["shapeGeo"].get();
 	triangleRectSqrFrontLeft->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	triangleRectSqrFrontLeft->IndexCount = triangleRectSqrFrontLeft->Geo->DrawArgs["triangleRectSqr"].IndexCount;
@@ -2083,7 +2090,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	XMStoreFloat4x4(&triangleright->World, XMMatrixScaling(2.0f, 2.0f, 15.0f)* XMMatrixTranslation(15.0f, yLevel + 16.0f, -0.0f));
 	XMStoreFloat4x4(&triangleright->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	triangleright->ObjCBIndex = 27;
-	triangleright->Mat = mMaterials["stone"].get();
+	triangleright->Mat = mMaterials["bricks"].get();
 	triangleright->Geo = mGeometries["shapeGeo"].get();
 	triangleright->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	triangleright->IndexCount = triangleright->Geo->DrawArgs["triangleEq"].IndexCount;
@@ -2096,7 +2103,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	XMStoreFloat4x4(&pyramidFrontLeft->World, XMMatrixScaling(4.0f, 4.0f, 4.0f)* XMMatrixTranslation(-15.0f, yLevel + 18.0f, -15.0f));
 	XMStoreFloat4x4(&pyramidFrontLeft->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	pyramidFrontLeft->ObjCBIndex = 28;
-	pyramidFrontLeft->Mat = mMaterials["stone"].get();
+	pyramidFrontLeft->Mat = mMaterials["bricks"].get();
 	pyramidFrontLeft->Geo = mGeometries["shapeGeo"].get();
 	pyramidFrontLeft->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	pyramidFrontLeft->IndexCount = pyramidFrontLeft->Geo->DrawArgs["pyramid"].IndexCount;
@@ -2109,7 +2116,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	XMStoreFloat4x4(&pyramidBackLeft->World, XMMatrixScaling(4.0f, 4.0f, 4.0f)* XMMatrixTranslation(-15.0f, yLevel + 18.0f, 15.0f));
 	XMStoreFloat4x4(&pyramidBackLeft->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	pyramidBackLeft->ObjCBIndex = 29;
-	pyramidBackLeft->Mat = mMaterials["stone"].get();
+	pyramidBackLeft->Mat = mMaterials["bricks"].get();
 	pyramidBackLeft->Geo = mGeometries["shapeGeo"].get();
 	pyramidBackLeft->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	pyramidBackLeft->IndexCount = pyramidBackLeft->Geo->DrawArgs["pyramid"].IndexCount;
@@ -2122,7 +2129,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	XMStoreFloat4x4(&pyramidBackRight->World, XMMatrixScaling(4.0f, 4.0f, 4.0f)* XMMatrixTranslation(15.0f, yLevel + 18.0f, 15.0f));
 	XMStoreFloat4x4(&pyramidBackRight->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	pyramidBackRight->ObjCBIndex = 30;
-	pyramidBackRight->Mat = mMaterials["stone"].get();
+	pyramidBackRight->Mat = mMaterials["bricks"].get();
 	pyramidBackRight->Geo = mGeometries["shapeGeo"].get();
 	pyramidBackRight->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	pyramidBackRight->IndexCount = pyramidBackRight->Geo->DrawArgs["pyramid"].IndexCount;
@@ -2135,7 +2142,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	XMStoreFloat4x4(&rhomboLitem->World, XMMatrixScaling(1.0f, 1.0f, 1.0f)* XMMatrixTranslation(-6.7f, yLevel + 8.0f, -17.0f));
 	XMStoreFloat4x4(&rhomboLitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	rhomboLitem->ObjCBIndex = 31;
-	rhomboLitem->Mat = mMaterials["stone"].get();
+	rhomboLitem->Mat = mMaterials["checkboard"].get();//888
 	rhomboLitem->Geo = mGeometries["shapeGeo"].get();
 	rhomboLitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	rhomboLitem->IndexCount = rhomboLitem->Geo->DrawArgs["rhombo"].IndexCount;
@@ -2148,7 +2155,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	XMStoreFloat4x4(&prismRitem->World, XMMatrixScaling(0.1f, 0.2f, 0.1f)* XMMatrixTranslation(0.0f, yLevel + 20.0f, 0.0f));
 	XMStoreFloat4x4(&prismRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	prismRitem->ObjCBIndex = 32;
-	prismRitem->Mat = mMaterials["stone"].get();
+	prismRitem->Mat = mMaterials["checkboard"].get();
 	prismRitem->Geo = mGeometries["shapeGeo"].get();
 	prismRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	prismRitem->IndexCount = prismRitem->Geo->DrawArgs["prism"].IndexCount;
@@ -2156,7 +2163,6 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	prismRitem->BaseVertexLocation = prismRitem->Geo->DrawArgs["prism"].BaseVertexLocation;
 	mRitemLayer[(int)RenderLayer::Opaque].push_back(prismRitem.get());
 	mAllRitems.push_back(std::move(prismRitem));
-	
 	
 
 
