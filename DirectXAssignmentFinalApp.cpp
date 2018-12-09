@@ -570,7 +570,6 @@ void DirectXAssignmentFinalApp::UpdateMainPassCB(const GameTimer& gt)
 	mMainPassCB.Lights[4].SpotPower = 0.8f;
 
 
-
 	auto currPassCB = mCurrFrameResource->PassCB.get();
 	currPassCB->CopyData(0, mMainPassCB);
 }
@@ -659,19 +658,19 @@ void DirectXAssignmentFinalApp::LoadTextures()
 		mCommandList.Get(), stoneTex->Filename.c_str(),
 		stoneTex->Resource, stoneTex->UploadHeap));
 
-	auto checkerTex = std::make_unique<Texture>();
-	checkerTex->Name = "checkerTex";
-	checkerTex->Filename = L"Textures/pyramid.dds";
+	auto pyramidTex = std::make_unique<Texture>();
+	pyramidTex->Name = "pyramidTex";
+	pyramidTex->Filename = L"Textures/pyramid.dds";
 	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
-		mCommandList.Get(), checkerTex->Filename.c_str(),
-		checkerTex->Resource, checkerTex->UploadHeap));
+		mCommandList.Get(), pyramidTex->Filename.c_str(),
+		pyramidTex->Resource, pyramidTex->UploadHeap));
 
-	auto sandBrickTex = std::make_unique<Texture>();//777
-	sandBrickTex->Name = "sandBrickTex";
-	sandBrickTex->Filename = L"Textures/sun.dds";
+	auto sunTex = std::make_unique<Texture>();//777
+	sunTex->Name = "sunTex";
+	sunTex->Filename = L"Textures/sun.dds";
 	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
-		mCommandList.Get(), sandBrickTex->Filename.c_str(),
-		sandBrickTex->Resource, sandBrickTex->UploadHeap));
+		mCommandList.Get(), sunTex->Filename.c_str(),
+		sunTex->Resource, sunTex->UploadHeap));
 
 	auto mossyTex = std::make_unique<Texture>();
 	mossyTex->Name = "mossyTex";
@@ -694,8 +693,8 @@ void DirectXAssignmentFinalApp::LoadTextures()
 	mTextures[bricksTex->Name] = std::move(bricksTex);
 	mTextures[iceTex->Name] = std::move(iceTex);
 	mTextures[stoneTex->Name] = std::move(stoneTex);
-	mTextures[checkerTex->Name] = std::move(checkerTex);
-	mTextures[sandBrickTex->Name] = std::move(sandBrickTex);
+	mTextures[pyramidTex->Name] = std::move(pyramidTex);
+	mTextures[sunTex->Name] = std::move(sunTex);
 	mTextures[mossyTex->Name] = std::move(mossyTex);
 	mTextures[treeArrayTex->Name] = std::move(treeArrayTex);
 }
@@ -762,8 +761,8 @@ void DirectXAssignmentFinalApp::BuildDescriptorHeaps()
 	auto bricksTex = mTextures["bricksTex"]->Resource;
 	auto iceTex = mTextures["iceTex"]->Resource;
 	auto stoneTex = mTextures["stoneTex"]->Resource;
-	auto checkerTex = mTextures["checkerTex"]->Resource;;
-	auto sandBrickTex = mTextures["sandBrickTex"]->Resource;
+	auto pyramidTex = mTextures["pyramidTex"]->Resource;;
+	auto sunTex = mTextures["sunTex"]->Resource;
 	auto mossyTex = mTextures["mossyTex"]->Resource;
 	auto treeArrayTex = mTextures["treeArrayTex"]->Resource;
 
@@ -809,21 +808,18 @@ void DirectXAssignmentFinalApp::BuildDescriptorHeaps()
 	// next descriptor
 	// srv 6
 	hDescriptor.Offset(1, mCbvSrvDescriptorSize);
-	srvDesc.Format = checkerTex->GetDesc().Format;
-	md3dDevice->CreateShaderResourceView(checkerTex.Get(), &srvDesc, hDescriptor);
-	//sandbrick
-	hDescriptor.Offset(1, mCbvSrvDescriptorSize);
-	srvDesc.Format = sandBrickTex->GetDesc().Format;
-	md3dDevice->CreateShaderResourceView(sandBrickTex.Get(), &srvDesc, hDescriptor);
-	////sandbrick
-	//hDescriptor.Offset(1, mCbvSrvDescriptorSize);
-	//srvDesc.Format = mossyTex->GetDesc().Format;
-	//md3dDevice->CreateShaderResourceView(mossyTex.Get(), &srvDesc, hDescriptor);
-
+	srvDesc.Format = pyramidTex->GetDesc().Format;
+	md3dDevice->CreateShaderResourceView(pyramidTex.Get(), &srvDesc, hDescriptor);
 	
-	// next descriptor
-	// srv 7
+	//suntex
 	hDescriptor.Offset(1, mCbvSrvDescriptorSize);
+	srvDesc.Format = sunTex->GetDesc().Format;
+	md3dDevice->CreateShaderResourceView(sunTex.Get(), &srvDesc, hDescriptor);
+
+	//mossyTex
+	hDescriptor.Offset(1, mCbvSrvDescriptorSize);
+	srvDesc.Format = mossyTex->GetDesc().Format;
+	md3dDevice->CreateShaderResourceView(mossyTex.Get(), &srvDesc, hDescriptor);
 
 	auto desc = treeArrayTex->GetDesc();
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
@@ -833,8 +829,6 @@ void DirectXAssignmentFinalApp::BuildDescriptorHeaps()
 	srvDesc.Texture2DArray.FirstArraySlice = 0;
 	srvDesc.Texture2DArray.ArraySize = treeArrayTex->GetDesc().DepthOrArraySize;
 	md3dDevice->CreateShaderResourceView(treeArrayTex.Get(), &srvDesc, hDescriptor);
-
-
 }
 
 void DirectXAssignmentFinalApp::BuildShadersAndInputLayouts()
@@ -1023,110 +1017,7 @@ void DirectXAssignmentFinalApp::BuildBoxGeometry()
 		triangleEq.Vertices.size() + //TriangleEq
 		triangleRectSqr.Vertices.size();
 
-	std::vector<Vertex> vertices(totalVertexCount);
-
-	/*
-	UINT k = 0;
-	for (size_t i = 0; i < box.Vertices.size(); ++i, ++k)
-	{
-		auto& p = box.Vertices[i].Position;
-		vertices[k].Pos = p;
-		vertices[k].Normal = box.Vertices[i].Normal;
-		vertices[k].TexC = box.Vertices[i].TexC;
-	}
-
-	for (size_t i = 0; i < grid.Vertices.size(); ++i, ++k)
-	{
-		auto& p = grid.Vertices[i].Position;
-		vertices[k].Pos = grid.Vertices[i].Position;
-		vertices[k].Normal = grid.Vertices[i].Normal;
-		vertices[k].TexC = grid.Vertices[i].TexC;
-	}
-
-	for (size_t i = 0; i < sphere.Vertices.size(); ++i, ++k)
-	{
-		auto& p = sphere.Vertices[i].Position;
-		vertices[k].Pos = sphere.Vertices[i].Position;
-		vertices[k].Normal = sphere.Vertices[i].Normal;
-		vertices[k].TexC = sphere.Vertices[i].TexC;
-	}
-
-	for (size_t i = 0; i < cylinder.Vertices.size(); ++i, ++k)
-	{
-		auto& p = cylinder.Vertices[i].Position;
-		vertices[k].Pos = cylinder.Vertices[i].Position;
-		vertices[k].Normal = cylinder.Vertices[i].Normal;
-		vertices[k].TexC = cylinder.Vertices[i].TexC;
-	}
-
-	for (size_t i = 0; i < diamond.Vertices.size(); ++i, ++k)
-	{
-		auto& p = diamond.Vertices[i].Position;
-		vertices[k].Pos = diamond.Vertices[i].Position;
-		vertices[k].Normal = diamond.Vertices[i].Normal;
-		vertices[k].TexC = diamond.Vertices[i].TexC;
-	}
-
-	for (size_t i = 0; i < torus.Vertices.size(); ++i, ++k)
-	{
-		auto& p = torus.Vertices[i].Position;
-		vertices[k].Pos = torus.Vertices[i].Position;
-		vertices[k].Normal = torus.Vertices[i].Normal;
-		vertices[k].TexC = torus.Vertices[i].TexC;
-	}
-
-	for (size_t i = 0; i < pyramid.Vertices.size(); ++i, ++k)
-	{
-		auto& p = pyramid.Vertices[i].Position;
-		vertices[k].Pos = pyramid.Vertices[i].Position;
-		vertices[k].Normal = pyramid.Vertices[i].Normal;
-		vertices[k].TexC = pyramid.Vertices[i].TexC;
-	}
-
-	for (size_t i = 0; i < prism.Vertices.size(); ++i, ++k)
-	{
-		auto& p = prism.Vertices[i].Position;
-		vertices[k].Pos = prism.Vertices[i].Position;
-		vertices[k].Normal = prism.Vertices[i].Normal;
-		vertices[k].TexC = prism.Vertices[i].TexC;
-	}
-
-	for (size_t i = 0; i < wedge.Vertices.size(); ++i, ++k)
-	{
-		auto& p = wedge.Vertices[i].Position;
-		vertices[k].Pos = wedge.Vertices[i].Position;
-		vertices[k].Normal = wedge.Vertices[i].Normal;
-		vertices[k].TexC = wedge.Vertices[i].TexC;
-	}
-	for (size_t i = 0; i < hexagon.Vertices.size(); ++i, ++k)
-	{
-		auto& p = hexagon.Vertices[i].Position;
-		vertices[k].Pos = hexagon.Vertices[i].Position;
-		vertices[k].Normal = hexagon.Vertices[i].Normal;
-		vertices[k].TexC = hexagon.Vertices[i].TexC;
-	}
-	for (size_t i = 0; i < cone.Vertices.size(); ++i, ++k)
-	{
-		auto& p = cone.Vertices[i].Position;
-		vertices[k].Pos = cone.Vertices[i].Position;
-		vertices[k].Normal = cone.Vertices[i].Normal;
-		vertices[k].TexC = cone.Vertices[i].TexC;
-	}
-
-	std::vector<std::uint16_t> indices;
-	indices.insert(indices.end(), std::begin(box.GetIndices16()), std::end(box.GetIndices16()));
-	indices.insert(indices.end(), std::begin(grid.GetIndices16()), std::end(grid.GetIndices16()));
-	indices.insert(indices.end(), std::begin(sphere.GetIndices16()), std::end(sphere.GetIndices16()));
-	indices.insert(indices.end(), std::begin(cylinder.GetIndices16()), std::end(cylinder.GetIndices16()));
-	indices.insert(indices.end(), std::begin(diamond.GetIndices16()), std::end(diamond.GetIndices16()));
-	indices.insert(indices.end(), std::begin(torus.GetIndices16()), std::end(torus.GetIndices16()));
-	indices.insert(indices.end(), std::begin(pyramid.GetIndices16()), std::end(pyramid.GetIndices16()));
-	indices.insert(indices.end(), std::begin(prism.GetIndices16()), std::end(prism.GetIndices16()));
-	indices.insert(indices.end(), std::begin(wedge.GetIndices16()), std::end(wedge.GetIndices16()));
-	indices.insert(indices.end(), std::begin(hexagon.GetIndices16()), std::end(hexagon.GetIndices16()));
-	indices.insert(indices.end(), std::begin(cone.GetIndices16()), std::end(cone.GetIndices16()));
-	*/
-	
+	std::vector<Vertex> vertices(totalVertexCount);	
 
 	UINT k = 0;
 	for (size_t i = 0; i < box.Vertices.size(); ++i, ++k)
@@ -1612,8 +1503,8 @@ void DirectXAssignmentFinalApp::BuildFrameResources()
 
 void DirectXAssignmentFinalApp::BuildMaterials()
 {
-	int cbIndex = 4;
-	int srvHeapIndex = 4;
+	int cbIndex = 8;
+	int srvHeapIndex = 8;
 
 	auto grass = std::make_unique<Material>();
 	grass->Name = "grass";
@@ -1672,40 +1563,39 @@ void DirectXAssignmentFinalApp::BuildMaterials()
 	stone->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
 	stone->Roughness = 0.25f;
 
-	auto checkboard = std::make_unique<Material>();
-	checkboard->Name = "checkboard";
-	checkboard->MatCBIndex = 7;
-	checkboard->DiffuseSrvHeapIndex = 6;
-	checkboard->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	checkboard->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
-	checkboard->Roughness = 0.25f;
+	auto pyramid = std::make_unique<Material>();
+	pyramid->Name = "pyramid";
+	pyramid->MatCBIndex = 7;
+	pyramid->DiffuseSrvHeapIndex = 6;
+	pyramid->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	pyramid->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
+	pyramid->Roughness = 0.25f;
 
-	auto sandBrick = std::make_unique<Material>();
-	sandBrick->Name = "sandBrick";
-	sandBrick->MatCBIndex = 8;
-	sandBrick->DiffuseSrvHeapIndex = 7;
-	sandBrick->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	sandBrick->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
-	sandBrick->Roughness = 0.25f;
+	auto sunMat = std::make_unique<Material>();
+	sunMat->Name = "sunMat";
+	sunMat->MatCBIndex = 8;
+	sunMat->DiffuseSrvHeapIndex = 7;
+	sunMat->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	sunMat->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
+	sunMat->Roughness = 0.25f;
 
 	auto mossy = std::make_unique<Material>();
 	mossy->Name = "mossy";
-	mossy->MatCBIndex = cbIndex++;
-	mossy->DiffuseSrvHeapIndex = srvHeapIndex++;
+	mossy->MatCBIndex = 9;
+	mossy->DiffuseSrvHeapIndex = 8;
 	mossy->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	mossy->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
 	mossy->Roughness = 0.25f;
 
-
 	auto stonestep = std::make_unique<Material>();
 	stonestep->Name = "stonestep";
-	stonestep->MatCBIndex = cbIndex++;
-	stonestep->DiffuseSrvHeapIndex = srvHeapIndex++;
+	stonestep->MatCBIndex = 10;
+	stonestep->DiffuseSrvHeapIndex = 9;
 	stonestep->DiffuseAlbedo = XMFLOAT4(Colors::Gray);
 	stonestep->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
 	stonestep->Roughness = 0.01f;
 
-	mMaterials["stonestep"] = std::move(stonestep);
+	
 	mMaterials["grass"] = std::move(grass);
 	mMaterials["water"] = std::move(water);
 	mMaterials["wirefence"] = std::move(wirefence);
@@ -1713,9 +1603,10 @@ void DirectXAssignmentFinalApp::BuildMaterials()
 	mMaterials["bricks"] = std::move(bricks);
 	mMaterials["ice"] = std::move(ice);
 	mMaterials["stone"] = std::move(stone);
-	mMaterials["checkboard"] = std::move(checkboard);
-	mMaterials["sandBrick"] = std::move(sandBrick);
+	mMaterials["pyramid"] = std::move(pyramid);
+	mMaterials["sunMat"] = std::move(sunMat);
 	mMaterials["mossy"] = std::move(mossy);
+	mMaterials["stonestep"] = std::move(stonestep);
 
 }
 
@@ -1814,7 +1705,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	XMStoreFloat4x4(&diamondRitem->World, XMMatrixScaling(5.0f, 5.0f, 5.0f) * XMMatrixRotationX(5.1) * XMMatrixTranslation(-0.7f, yLevel + 15.9f, -0.6f));
 	XMStoreFloat4x4(&diamondRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	diamondRitem->ObjCBIndex = 6;
-	diamondRitem->Mat = mMaterials["mossy"].get();
+	diamondRitem->Mat = mMaterials["ice"].get();
 	diamondRitem->Geo = mGeometries["shapeGeo"].get();
 	diamondRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	diamondRitem->IndexCount = diamondRitem->Geo->DrawArgs["diamond"].IndexCount;
@@ -1827,7 +1718,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	XMStoreFloat4x4(&diamond1Ritem->World, XMMatrixScaling(5.0f, 5.0f, 5.0f) * XMMatrixRotationX(5.1) * XMMatrixTranslation(0.7f, yLevel + 15.9f, -0.6f));
 	XMStoreFloat4x4(&diamond1Ritem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	diamond1Ritem->ObjCBIndex = 7;
-	diamond1Ritem->Mat = mMaterials["mossy"].get();
+	diamond1Ritem->Mat = mMaterials["ice"].get();
 	diamond1Ritem->Geo = mGeometries["shapeGeo"].get();
 	diamond1Ritem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	diamond1Ritem->IndexCount = diamond1Ritem->Geo->DrawArgs["diamond"].IndexCount;
@@ -1853,7 +1744,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	XMStoreFloat4x4(&rhomboRitem->World, XMMatrixScaling(1.0f, 1.0f, 1.0f)* XMMatrixTranslation(6.7f, yLevel + 8.0f, -17.0f));
 	XMStoreFloat4x4(&rhomboRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	rhomboRitem->ObjCBIndex = 9;
-	rhomboRitem->Mat = mMaterials["checkboard"].get();
+	rhomboRitem->Mat = mMaterials["pyramid"].get();
 	rhomboRitem->Geo = mGeometries["shapeGeo"].get();
 	rhomboRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	rhomboRitem->IndexCount = rhomboRitem->Geo->DrawArgs["rhombo"].IndexCount;
@@ -1866,7 +1757,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	XMStoreFloat4x4(&sphereRitem->World, XMMatrixScaling(3.0f, 3.0f, 3.0f) * XMMatrixTranslation(-20.7f, yLevel + 40.0f, 35.0f));
 	XMStoreFloat4x4(&sphereRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	sphereRitem->ObjCBIndex = 10;
-	sphereRitem->Mat = mMaterials["sandBrick"].get();//sol
+	sphereRitem->Mat = mMaterials["sunMat"].get();//sol
 	sphereRitem->Geo = mGeometries["shapeGeo"].get();
 	sphereRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	sphereRitem->IndexCount = sphereRitem->Geo->DrawArgs["sphere"].IndexCount;
@@ -1879,7 +1770,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	XMStoreFloat4x4(&hexagonRitem->World, XMMatrixScaling(3.0f, 0.1f, 3.0f)* XMMatrixTranslation(0.0f, yLevel, -5.0f));
 	XMStoreFloat4x4(&hexagonRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	hexagonRitem->ObjCBIndex = 11;
-	hexagonRitem->Mat = mMaterials["stone"].get();
+	hexagonRitem->Mat = mMaterials["mossy"].get();
 	hexagonRitem->Geo = mGeometries["shapeGeo"].get();
 	hexagonRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	hexagonRitem->IndexCount = hexagonRitem->Geo->DrawArgs["hexagon"].IndexCount;
@@ -2142,7 +2033,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	XMStoreFloat4x4(&rhomboLitem->World, XMMatrixScaling(1.0f, 1.0f, 1.0f)* XMMatrixTranslation(-6.7f, yLevel + 8.0f, -17.0f));
 	XMStoreFloat4x4(&rhomboLitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	rhomboLitem->ObjCBIndex = 31;
-	rhomboLitem->Mat = mMaterials["checkboard"].get();//888
+	rhomboLitem->Mat = mMaterials["pyramid"].get();//888
 	rhomboLitem->Geo = mGeometries["shapeGeo"].get();
 	rhomboLitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	rhomboLitem->IndexCount = rhomboLitem->Geo->DrawArgs["rhombo"].IndexCount;
@@ -2155,7 +2046,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	XMStoreFloat4x4(&prismRitem->World, XMMatrixScaling(0.1f, 0.2f, 0.1f)* XMMatrixTranslation(0.0f, yLevel + 20.0f, 0.0f));
 	XMStoreFloat4x4(&prismRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	prismRitem->ObjCBIndex = 32;
-	prismRitem->Mat = mMaterials["checkboard"].get();
+	prismRitem->Mat = mMaterials["pyramid"].get();
 	prismRitem->Geo = mGeometries["shapeGeo"].get();
 	prismRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	prismRitem->IndexCount = prismRitem->Geo->DrawArgs["prism"].IndexCount;
