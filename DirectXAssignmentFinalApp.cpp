@@ -537,38 +537,72 @@ void DirectXAssignmentFinalApp::UpdateMainPassCB(const GameTimer& gt)
 	mMainPassCB.TotalTime = gt.TotalTime();
 	mMainPassCB.DeltaTime = gt.DeltaTime();
 
-	mMainPassCB.AmbientLight = { 0.15f, 0.15f, 0.35f, 1.0f };
+	mMainPassCB.AmbientLight = { 0.25f, 0.25f, 0.35f, 1.0f };
 
-	mMainPassCB.Lights[0].Position = { 0.0f, 29.5f, -2.0f };
+	//inner castle light
 	mMainPassCB.Lights[0].Direction = { 0.57735f, -0.57735f, 0.57735f };
-	mMainPassCB.Lights[0].Strength = { 0.6f, 0.6f, 0.6f };	
-
+	mMainPassCB.Lights[0].Strength = { 0.6f, 0.6f, 0.6f };
+	//mMainPassCB.Lights[0].Strength = { 0.0f, 0.0f, 0.0f };
 
 	//Directional Light
-	mMainPassCB.Lights[1].Position = { 0.0f, 29.5f, -2.0f };
-	mMainPassCB.Lights[1].Direction = { -0.6f, -0.6f, 0.6f };
+	mMainPassCB.Lights[1].Direction = { -0.57735f, -0.57735f, 0.57735f };
 	mMainPassCB.Lights[1].Strength = { 0.3f, 0.3f, 0.3f };
-	
-	/*//Directional Light
-	mMainPassCB.Lights[2].Position = { 0.0f, 29.5f, -2.0f };
-	mMainPassCB.Lights[2].Direction = { 0.0f, -30.7f, -0.7f };
-	mMainPassCB.Lights[2].Strength = { 0.2f, 0.2f, 0.2f };*/
+	//mMainPassCB.Lights[1].Strength = { 0.0f, 0.0f, 0.0f };
 
-	
-	//Point light //blue
+
+	//Directional Light  Red
+	mMainPassCB.Lights[2].Direction = { 0.0f, -0.707f, -0.707f };
+	mMainPassCB.Lights[2].Strength = { 1.0f, -0.5f, -0.55f };
+	//mMainPassCB.Lights[2].Strength = { 0.0f, -0.0f, -0.0f };
+
+
+	//Point light //blue Skull
 	mMainPassCB.Lights[3].Position = { 0.0f, 29.5f, -2.0f };
 	mMainPassCB.Lights[3].FalloffStart = 0.0f;
-	mMainPassCB.Lights[3].Strength = { 1.0f, 0.0f, 0.0f };
+	mMainPassCB.Lights[3].Strength = { 0.0f, 0.0f, 4.0f };
+	//mMainPassCB.Lights[3].Strength = { 0.0f, 0.0f, 0.0f };
 	mMainPassCB.Lights[3].FalloffEnd = 10.f;
 
-	//Point light sun (-20.7f, 50.0f, 35.0f));
-	mMainPassCB.Lights[4].Position = { -20.7f, 50.0f, 30.0 };	
+	//Point light Sun
+	mMainPassCB.Lights[4].Position = { -20.7f, 50.0f, 30.0 };
 	mMainPassCB.Lights[4].FalloffStart = 0.0f;
-	mMainPassCB.Lights[4].Strength = { 0.93f, 0.7f, 0.f };
+	mMainPassCB.Lights[4].Strength = { 0.93f*2.f, 0.99f*2.f, 4.f };
+	//mMainPassCB.Lights[4].Strength = { 0.0f, 0.0f, 0.f };
 	mMainPassCB.Lights[4].FalloffEnd = 10.f;
-	mMainPassCB.Lights[4].Direction = { -13.0f, 24.5f, -17.0f };
-	mMainPassCB.Lights[4].SpotPower = 0.8f;
 
+	////5
+	mMainPassCB.Lights[5].Position = { 5.0f, 14.5f, 8.0f };
+	mMainPassCB.Lights[5].FalloffStart = 0.0f;
+	mMainPassCB.Lights[5].Strength = { 0.0f, 0.0f, 4.0f };
+	mMainPassCB.Lights[5].FalloffEnd = 10.f;
+
+	//
+	////Spot light On Left Tower Front
+	mMainPassCB.Lights[5].FalloffStart = 0.0f;
+	mMainPassCB.Lights[5].Strength = { 2.0f, 2.0f, 2.0f };
+	//mMainPassCB.Lights[5].Strength = { 0.0f, 0.0f, 0.0f };
+	mMainPassCB.Lights[5].FalloffEnd = 10.f;
+	mMainPassCB.Lights[5].Direction = { -26.0f, 0.0f, -75.0f };
+	mMainPassCB.Lights[5].SpotPower = 0.8f;
+	mMainPassCB.Lights[5].Position = { -3.f, 17.0f, -17.f };
+
+	////Spot light On right Tower 
+	mMainPassCB.Lights[6].FalloffStart = 0.0f;
+	mMainPassCB.Lights[6].Strength = { 1.3f, 1.3f, 1.3f };
+	//mMainPassCB.Lights[6].Strength = { 0.0f, 0.0f, 0.0f };
+	mMainPassCB.Lights[6].FalloffEnd = 10.f;
+	mMainPassCB.Lights[6].Direction = { 15.0f, 0.0f, -17.0f };
+	mMainPassCB.Lights[6].SpotPower = 1.0f;
+	mMainPassCB.Lights[6].Position = { 7.0f, 17.0f, 0.f };
+
+	////Spot light On Left Tower
+	mMainPassCB.Lights[7].FalloffStart = 0.0f;
+	mMainPassCB.Lights[7].Strength = { 1.3f, 1.3f, 1.3f };
+	//mMainPassCB.Lights[7].Strength = { 0.0f, 0.0f, 0.0f };
+	mMainPassCB.Lights[7].FalloffEnd = 10.f;
+	mMainPassCB.Lights[7].Direction = { -15.0f, 0.0f, -17.0f };
+	mMainPassCB.Lights[7].SpotPower = 1.0f;
+	mMainPassCB.Lights[7].Position = { -7.0f, 17.0f, 0.f };
 
 	auto currPassCB = mCurrFrameResource->PassCB.get();
 	currPassCB->CopyData(0, mMainPassCB);
@@ -1321,12 +1355,12 @@ void DirectXAssignmentFinalApp::BuildTreeSpritesGeometry()
 
 	static const int treeCount = 20;
 	std::array<TreeSpriteVertex, 40> vertices;
-	float x = 25.0f;
-	float z = 25.0f;
+	float x = 35.0f;
+	float z = 35.0f;
 	for(UINT i = 0; i < treeCount; ++i)
 	{
-		float x = MathHelper::RandF(MathHelper::RandF(-80.f, -35.0), MathHelper::RandF(25.f, 65.0));
-		float z = MathHelper::RandF(MathHelper::RandF(-80.f, -35.0), MathHelper::RandF(25.f, 65.0));
+		float x = MathHelper::RandF(MathHelper::RandF(-80.f, -135.0), MathHelper::RandF(25.f, 65.0));
+		float z = MathHelper::RandF(MathHelper::RandF(-80.f, -135.0), MathHelper::RandF(25.f, 65.0));
 
 		float y = GetHillsHeight(x, z);
 
@@ -1871,7 +1905,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	mAllRitems.push_back(std::move(frontRightCastleWall));
 
 	auto frontRightCastlePillar = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&frontRightCastlePillar->World, XMMatrixScaling(2.0f, 40.0f, 2.0f)*XMMatrixTranslation(15.0f, yLevel + 8.5f, -15.0f));
+	XMStoreFloat4x4(&frontRightCastlePillar->World, XMMatrixScaling(2.0f, 40.0f, 2.0f)*XMMatrixTranslation(15.1f, yLevel + 8.5f, -15.1f));
 	XMStoreFloat4x4(&frontRightCastlePillar->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	frontRightCastlePillar->ObjCBIndex = 19;
 	frontRightCastlePillar->Mat = mMaterials["stone"].get();
@@ -1884,7 +1918,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	mAllRitems.push_back(std::move(frontRightCastlePillar));
 
 	auto frontLeftCastlePillar = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&frontLeftCastlePillar->World, XMMatrixScaling(2.0f, 40.0f, 2.0f)*XMMatrixTranslation(-15.0f, yLevel + 8.5f, -15.0f));
+	XMStoreFloat4x4(&frontLeftCastlePillar->World, XMMatrixScaling(2.0f, 40.0f, 2.0f)*XMMatrixTranslation(-15.1f, yLevel + 8.5f, -15.1f));
 	XMStoreFloat4x4(&frontLeftCastlePillar->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	frontLeftCastlePillar->ObjCBIndex = 20;
 	frontLeftCastlePillar->Mat = mMaterials["stone"].get();
