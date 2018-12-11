@@ -1713,7 +1713,7 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	XMStoreFloat4x4(&basePillar->World, XMMatrixScaling(4.0f, 6.0f, 4.0f) * XMMatrixTranslation(0.0f, yLevel + 5.0f, 0.0f));
 	XMStoreFloat4x4(&basePillar->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	basePillar->ObjCBIndex = 4;
-	basePillar->Mat = mMaterials["wirefence"].get();
+	basePillar->Mat = mMaterials["stone"].get();
 	basePillar->Geo = mGeometries["shapeGeo"].get();
 	basePillar->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	basePillar->IndexCount = basePillar->Geo->DrawArgs["cylinder"].IndexCount;
@@ -2088,25 +2088,6 @@ void DirectXAssignmentFinalApp::BuildRenderItems()
 	prismRitem->BaseVertexLocation = prismRitem->Geo->DrawArgs["prism"].BaseVertexLocation;
 	mRitemLayer[(int)RenderLayer::Opaque].push_back(prismRitem.get());
 	mAllRitems.push_back(std::move(prismRitem));
-	
-
-
-	//Skull needs fixing:
-	/*
-	auto skullRitem = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&skullRitem->World, XMMatrixScaling(0.5f, 0.5f, 0.5f)*XMMatrixTranslation(0.0f, 14.0f, 0.0f));
-	XMStoreFloat4x4(&skullRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
-	skullRitem->TexTransform = MathHelper::Identity4x4();
-	skullRitem->ObjCBIndex = 33;
-	skullRitem->Mat = mMaterials["skull"].get();
-	skullRitem->Geo = mGeometries["skullGeo"].get();
-	skullRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	skullRitem->IndexCount = skullRitem->Geo->DrawArgs["skull"].IndexCount;
-	skullRitem->StartIndexLocation = skullRitem->Geo->DrawArgs["skull"].StartIndexLocation;
-	skullRitem->BaseVertexLocation = skullRitem->Geo->DrawArgs["skull"].BaseVertexLocation;
-	mRitemLayer[(int)RenderLayer::Opaque].push_back(skullRitem.get());
-	mAllRitems.push_back(std::move(skullRitem));
-	*/
 	
 	//Skull
 	auto skullRitem = std::make_unique<RenderItem>();
